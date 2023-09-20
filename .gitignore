@@ -155,4 +155,5 @@ output.mid
 
 checkpoints/
 *.cpkt
-lighting_logs/
+lightning_logs/
+shanties/

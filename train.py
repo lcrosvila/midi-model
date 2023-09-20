@@ -14,9 +14,13 @@ from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import Dataset
 from torch.utils.data import Dataset, DataLoader
 
+from transformers import AutoModel
+
 import MIDI
 from midi_model import MIDIModel
 from midi_tokenizer import MIDITokenizer
+
+from huggingface_hub import hf_hub_download
 
 EXTENSION = [".mid", ".midi"]
 
@@ -216,6 +220,8 @@ def get_midi_list(path):
     all_midis = sorted(
         fname for fname in all_files if file_ext(fname) in EXTENSION
     )
+    # for now we don't have a lot, so we can just repeat them a few times
+    all_midis = all_midis * 10
     return all_midis
 
 
@@ -349,6 +355,16 @@ if __name__ == '__main__':
     )
     callbacks = [checkpoint_callback]
 
+    ckpt_path = opt.resume
+    if ckpt_path == "":
+        ckpt_path = None
+    elif ckpt_path == "from_hf":
+        # Load model directly
+        model = AutoModel.from_pretrained("skytnt/midi-model")  
+        ckpt_path = None
+    else:
+        model.load_state_dict(torch.load(ckpt_path, map_location="cpu"), strict=False)
+
     trainer = Trainer(
         precision=32 if opt.fp32 else 16,
         accumulate_grad_batches=opt.acc_grad,
@@ -362,8 +378,6 @@ if __name__ == '__main__':
         strategy="ddp",
         callbacks=callbacks,
     )
-    ckpt_path = opt.resume
-    if ckpt_path == "":
-        ckpt_path = None
+
     print("---start train---")
-    trainer.fit(model, train_dataloader, val_dataloader, ckpt_path=ckpt_path)
+    trainer.fit(model, train_dataloader, val_dataloader)
