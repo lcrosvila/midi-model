@@ -222,7 +222,7 @@ def get_midi_list(path):
     )
     # for now we don't have a lot, so we can just repeat them a few times
     # NOTE: this is completely wrong, as validation set will have data from training set, but I'll deal with it later
-    all_midis = all_midis * 10
+    # all_midis = all_midis * 10
     return all_midis
 
 
