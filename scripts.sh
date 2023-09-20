@@ -1,1 +1,1 @@
-/opt/conda/bin/python /root/midi-model/train.py --resume checkpoints/model.ckpt --data /root/midi-model/shanties/ --data-val-split 50 --val-step  32
+/opt/conda/bin/python /root/midi-model/train.py --resume checkpoints/model.ckpt --data /root/midi-model/shanties/ --data-val-split 50 --val-step  32 --max-step 10000 --warmup-step 100
