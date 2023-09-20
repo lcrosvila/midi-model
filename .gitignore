@@ -157,3 +157,4 @@ checkpoints/
 *.cpkt
 lightning_logs/
 shanties/
+sample/
