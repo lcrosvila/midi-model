@@ -20,7 +20,6 @@ import MIDI
 from midi_model import MIDIModel
 from midi_tokenizer import MIDITokenizer
 
-from huggingface_hub import hf_hub_download
 
 EXTENSION = [".mid", ".midi"]
 
@@ -185,7 +184,7 @@ class TrainMIDIModel(MIDIModel):
     def on_validation_end(self):
         @rank_zero_only
         def gen_example():
-            mid = self.generate()
+            mid = self.generate(max_len=1024)
             mid = self.tokenizer.detokenize(mid)
             img = self.tokenizer.midi2img(mid)
             img.save(f"sample/{self.global_step}_0.png")
@@ -195,7 +194,7 @@ class TrainMIDIModel(MIDIModel):
             prompt = np.asarray(prompt, dtype=np.int16)
             ori = prompt[:512]
             prompt = prompt[:256].astype(np.int64)
-            mid = self.generate(prompt)
+            mid = self.generate(prompt, max_len=1024)
             mid = self.tokenizer.detokenize(mid)
             img = self.tokenizer.midi2img(mid)
             img.save(f"sample/{self.global_step}_1.png")
@@ -316,8 +315,19 @@ if __name__ == '__main__':
     random.shuffle(midi_list)
     full_dataset_len = len(midi_list)
     train_dataset_len = full_dataset_len - opt.data_val_split
-    train_midi_list = midi_list[:train_dataset_len]
-    val_midi_list = midi_list[train_dataset_len:]
+    if 'augmented' in opt.data:
+        train_name_len = int(train_dataset_len / 15)
+        # make sure that there are no repeated midi files in train and val
+        unique_midi_list = list(set([name.split('/')[-1].split('_')[0] for name in midi_list]))
+        train_name_list = unique_midi_list[:train_name_len]
+        val_name_list = unique_midi_list[train_name_len:]
+        
+        train_midi_list = [name for name in midi_list if name.split('/')[-1].split('_')[0] in train_name_list]
+        val_midi_list = [name for name in midi_list if name.split('/')[-1].split('_')[0] in val_name_list]
+    else:
+        train_midi_list = midi_list[:train_dataset_len]
+        val_midi_list = midi_list[train_dataset_len:]
+
     train_dataset = MidiDataset(train_midi_list, tokenizer, max_len=opt.max_len)
     val_dataset = MidiDataset(val_midi_list, tokenizer, max_len=opt.max_len, aug=False)
     train_dataloader = DataLoader(
@@ -363,6 +373,8 @@ if __name__ == '__main__':
         # Load model directly
         model = AutoModel.from_pretrained("skytnt/midi-model")  
         ckpt_path = None
+    elif ckpt_path == "from_last_ckpt":
+        ckpt_path = checkpoint_callback.last_model_path
     else:
         model.load_state_dict(torch.load(ckpt_path, map_location="cpu"), strict=False)
 
