@@ -1,36 +1,28 @@
-# Midi-Model
+# Fine-tuning Midi-Model to sea shanties
 
 ## Midi event transformer for music generation
-
-![](./banner.png)
-
-## Demo
 
 - [online: huggingface](https://huggingface.co/spaces/skytnt/midi-composer)
 
 - [online: colab](https://colab.research.google.com/github/SkyTNT/midi-model/blob/main/demo.ipynb)
 
-- [download windows app](https://github.com/SkyTNT/midi-model/releases)
+- [online: github](https://github.com/SkyTNT/midi-model)
 
 ## Pretrained model
 
-[huggingface](https://huggingface.co/skytnt/midi-model/blob/main/model.ckpt)
-
-## Dataset
-
-[projectlosangeles/Los-Angeles-MIDI-Dataset](https://huggingface.co/datasets/projectlosangeles/Los-Angeles-MIDI-Dataset)
+Download the pretrained model from [huggingface](https://huggingface.co/skytnt/midi-model/blob/main/model.ckpt) and save it in a new folder called `checkpoints`
 
 ## Requirements
 
-- install [pytorch](https://pytorch.org/)(recommend pytorch>=2.0)
-- install [fluidsynth](https://www.fluidsynth.org/)>=2.0.0
 - `pip install -r requirements.txt`
+  
+## Dataset
 
-## Run app
+Download [The Project Gutenberg EBook of The Shanty Book, Part I, Sailor Shanties](https://www.gutenberg.org/files/20774/20774-h/20774-h.htm) and augment it by:
 
-`python app.py`
+- `python download_shanties.py`
+- `python midi_augmentation.py --input_dir shanties/ --output_dir shanties/augmented/`
 
-## Train 
+## Fine-tune from checkpoint and save intermediate generations
 
-`python train.py`
- 
+`train.py --resume checkpoints/model.ckpt --data shanties/augmented/ --data-val-split 50 --val-step 32 --max-step 10000 --warmup-step 1000`
